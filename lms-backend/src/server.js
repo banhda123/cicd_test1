@@ -1,4 +1,5 @@
 require('dotenv').config();
+console.log('Environment variables loaded:', Object.keys(process.env).filter(key => key.includes('DB_') || key.includes('PORT') || key.includes('NODE_ENV')).length);
 const app = require('./app');
 const { connectDB } = require('./models');
 const emailService = require('./services/email.service');
