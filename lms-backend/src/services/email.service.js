@@ -1,15 +1,19 @@
 const nodemailer = require('nodemailer');
 const emailConfig = require('../config/email');
 
-// Tạo transporter
+// Tạo transporter với cấu hình production-ready
 const transporter = nodemailer.createTransport({
   host: emailConfig.host,
-  port: emailConfig.port,
-  secure: false, // true for 465, false for other ports
+  port: parseInt(emailConfig.port) || 465, // Ưu tiên 465 cho Render
+  secure: emailConfig.port == 465, // true cho 465, false cho 587
   auth: {
     user: emailConfig.user,
     pass: emailConfig.password,
   },
+  // Thêm TLS để tránh lỗi chứng chỉ trên server
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 // Gửi email xác nhận đăng ký (mã 6 chữ số)
