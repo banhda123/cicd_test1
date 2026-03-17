@@ -69,11 +69,28 @@ jobs:
         echo "=== Checking databases ==="
         docker exec test-db mysql -uroot -ptest -e "SHOW DATABASES;"
         
-        # Initialize database schema with explicit database and debug
-        echo "=== Initializing schema ==="
-        echo "Running: docker exec test-db mysql -uroot -ptest test < database/init.sql"
-        docker exec test-db mysql -uroot -ptest test < database/init.sql 2>&1
-        echo "Schema initialization completed"
+        # Initialize database schema line by line with debug
+        echo "=== Initializing schema manually ==="
+        # Create users table first
+        docker exec test-db mysql -uroot -ptest test -e "
+        CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            name VARCHAR(255),
+            username VARCHAR(255) UNIQUE,
+            role ENUM('admin', 'instructor', 'student', 'teacher') DEFAULT 'student',
+            avatar_url VARCHAR(500),
+            isEmailVerified BOOLEAN DEFAULT TRUE,
+            isActive BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );"
+        
+        # Insert admin user
+        docker exec test-db mysql -uroot -ptest test -e "
+        INSERT IGNORE INTO users (email, password, name, role, isEmailVerified, isActive) 
+        VALUES ('admin@lms.com', '\$2a\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin User', 'admin', TRUE, TRUE);"
         
         # Verify tables exist
         echo "=== Checking tables ==="
