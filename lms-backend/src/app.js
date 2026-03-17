@@ -126,6 +126,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// Root route cho Render health check
+app.get("/", (req, res) => {
+  res.status(200).send('Server is running');
+});
+
 // Auth routes
 app.use("/api/auth", authRoutes);
 
