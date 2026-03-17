@@ -6,8 +6,8 @@ async function loginAndGetToken() {
   const res = await request(app)
     .post('/api/auth/login')
     .send({
-      email: process.env.TEST_ADMIN_EMAIL || 'admin@gmail.com',
-      password: process.env.TEST_ADMIN_PASSWORD || '123456',
+      email: 'admin@gmail.com',
+      password: '123456',
     });
 
   if (!(res.statusCode === 200 || res.statusCode === 201) || res.body?.success !== true) {

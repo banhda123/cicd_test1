@@ -5,7 +5,7 @@ const path = require('path');
 async function loginAdmin() {
   const res = await request(app)
     .post('/api/auth/login')
-    .send({ email: process.env.TEST_ADMIN_EMAIL || 'admin@gmail.com', password: process.env.TEST_ADMIN_PASSWORD || '123456' });
+    .send({ email: 'admin@gmail.com', password: '123456' });
 
   expect([200, 201]).toContain(res.statusCode);
   const token = res.body?.data?.token;
