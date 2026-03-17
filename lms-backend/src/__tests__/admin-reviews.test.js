@@ -6,7 +6,7 @@ async function loginAndGetToken() {
   const res = await request(app)
     .post('/api/auth/login')
     .send({
-      email: process.env.TEST_ADMIN_EMAIL || 'adminThai@gmail.com',
+      email: process.env.TEST_ADMIN_EMAIL || 'admin@gmail.com',
       password: process.env.TEST_ADMIN_PASSWORD || '123456',
     });
 
