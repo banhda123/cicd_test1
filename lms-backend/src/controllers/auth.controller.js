@@ -73,7 +73,7 @@ exports.register = async (req, res) => {
     } catch (emailError) {
       console.error('Lỗi gửi email:', emailError);
       // Xóa user nếu không gửi được email
-      await user.destroy();
+      await newUser.destroy();
       return res.status(500).json({
         success: false,
         message: 'Lỗi gửi email xác nhận. Vui lòng thử lại sau',
@@ -85,13 +85,13 @@ exports.register = async (req, res) => {
       message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản',
       data: {
         user: {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          isEmailVerified: user.isEmailVerified,
+          id: newUser.id,
+          name: newUser.name,
+          username: newUser.username,
+          email: newUser.email,
+          phone: newUser.phone,
+          role: newUser.role,
+          isEmailVerified: newUser.isEmailVerified,
         },
         verificationCode: emailVerificationToken,
       },
