@@ -54,14 +54,14 @@ exports.register = async (req, res) => {
     const emailVerificationToken = generateNumericCode();
 
     // Tạo user mới
-    const user = await UserModel.create({
+    const newUser = await UserModel.create({
       name,
       username,
       email,
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: false,
+      isEmailVerified: process.env.NODE_ENV === 'production', // ✅ Auto verify ở production
       emailVerificationToken,
       emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
     });
@@ -390,12 +390,17 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Kiểm tra email đã được xác nhận
-    if (!user.isEmailVerified) {
-      return res.status(403).json({
-        success: false,
-        message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
-      });
+    // ✅ Bỏ qua kiểm tra email verification cho production
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🔓 Production mode - skipping email verification check');
+    } else {
+      // Kiểm tra email đã được xác nhận (chỉ ở development)
+      if (!user.isEmailVerified) {
+        return res.status(403).json({
+          success: false,
+          message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
+        });
+      }
     }
 
     // Kiểm tra tài khoản còn hoạt động
