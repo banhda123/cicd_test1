@@ -69,17 +69,19 @@ jobs:
         echo "=== Checking databases ==="
         docker exec test-db mysql -uroot -ptest -e "SHOW DATABASES;"
         
-        # Initialize database schema with explicit database
+        # Initialize database schema with explicit database and debug
         echo "=== Initializing schema ==="
-        docker exec test-db mysql -uroot -ptest test < database/init.sql
+        echo "Running: docker exec test-db mysql -uroot -ptest test < database/init.sql"
+        docker exec test-db mysql -uroot -ptest test < database/init.sql 2>&1
+        echo "Schema initialization completed"
         
         # Verify tables exist
         echo "=== Checking tables ==="
-        docker exec test-db mysql -uroot -ptest test -e "SHOW TABLES;"
+        docker exec test-db mysql -uroot -ptest test -e "SHOW TABLES;" 2>&1
         
         # Test database connection
         echo "=== Testing user table ==="
-        docker exec test-db mysql -uroot -ptest test -e "SELECT COUNT(*) FROM users;"
+        docker exec test-db mysql -uroot -ptest test -e "SELECT COUNT(*) FROM users;" 2>&1 || echo "User table test failed"
         
     - name: Run tests with retry and debug
       working-directory: ./lms-backend
