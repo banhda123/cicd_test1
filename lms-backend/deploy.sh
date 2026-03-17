@@ -15,7 +15,7 @@ fi
 echo "📦 Pulling latest Docker image..."
 docker-compose -f docker-compose.prod.yml pull
 
-# Stop existing services
+# Stop existing 
 echo "🛑 Stopping existing services..."
 docker-compose -f docker-compose.prod.yml down
 
