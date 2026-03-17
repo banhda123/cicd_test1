@@ -3,7 +3,7 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const AiPromptTemplate = sequelize.define('AiPromptTemplate', {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
@@ -22,7 +22,7 @@ module.exports = (sequelize) => {
       field: 'is_active',
     },
     createdByAdminId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
       field: 'created_by_admin_id',
     },
