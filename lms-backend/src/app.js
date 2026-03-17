@@ -99,16 +99,17 @@ app.use((req, res, next) => {
 // Input validation and sanitization
 app.use(validateInput);
 
-// Session middleware (required for Passport)
-// Tạm thởi disable session trên production để tránh memory leak
-if (process.env.NODE_ENV !== 'production') {
-  app.use(session({
-    secret: process.env.JWT_SECRET || 'default-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
-  }));
-}
+// Session middleware (required for Passport) - Enable for production with proper config
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'default-secret',
+  resave: true,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', 
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // Passport middleware
 app.use(passport.initialize());
