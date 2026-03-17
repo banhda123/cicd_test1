@@ -61,13 +61,24 @@ jobs:
           echo 'Waiting for database...'
           sleep 2
         done
+        
         # Create database first
         docker exec test-db mysql -uroot -ptest -e "CREATE DATABASE IF NOT EXISTS test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-        # Initialize database schema
+        
+        # Check if database exists
+        echo "=== Checking databases ==="
+        docker exec test-db mysql -uroot -ptest -e "SHOW DATABASES;"
+        
+        # Initialize database schema with explicit database
+        echo "=== Initializing schema ==="
         docker exec test-db mysql -uroot -ptest test < database/init.sql
+        
         # Verify tables exist
+        echo "=== Checking tables ==="
         docker exec test-db mysql -uroot -ptest test -e "SHOW TABLES;"
+        
         # Test database connection
+        echo "=== Testing user table ==="
         docker exec test-db mysql -uroot -ptest test -e "SELECT COUNT(*) FROM users;"
         
     - name: Run tests with retry and debug
