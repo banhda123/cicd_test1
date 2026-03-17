@@ -29,6 +29,24 @@ jobs:
       working-directory: ./lms-backend
       run: npm ci
       
+    - name: Create test environment file
+      working-directory: ./lms-backend
+      run: |
+        cp .env.example .env
+        echo "PORT=3000" >> .env
+        echo "ALLOWED_ORIGINS=http://localhost:3000" >> .env
+        echo "DB_HOST=localhost" >> .env
+        echo "DB_USER=test" >> .env
+        echo "DB_PASSWORD=test" >> .env
+        echo "DB_NAME=test" >> .env
+        echo "JWT_SECRET=test_secret_for_ci_cd" >> .env
+        echo "JWT_EXPIRES_IN=1h" >> .env
+        echo "EMAIL_HOST=smtp.gmail.com" >> .env
+        echo "EMAIL_PORT=587" >> .env
+        echo "EMAIL_USER=test@example.com" >> .env
+        echo "EMAIL_PASSWORD=test" >> .env
+        echo "EMAIL_FROM_NAME=Test" >> .env
+        
     - name: Run tests
       working-directory: ./lms-backend
       run: npm test
