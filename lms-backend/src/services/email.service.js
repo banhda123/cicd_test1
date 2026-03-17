@@ -18,6 +18,15 @@ const transporter = nodemailer.createTransport({
 
 // Gửi email xác nhận đăng ký (mã 6 chữ số)
 exports.sendVerificationEmail = async (email, name, verificationToken, verificationLink) => {
+  // ✅ Lazy verification - chỉ check khi thực sự gửi
+  try {
+    await transporter.verify();
+    console.log('✓ Email connection verified on send');
+  } catch (error) {
+    console.warn('⚠️ Email connection failed, but continuing:', error.message);
+    // Không throw error - để server tiếp tục chạy
+  }
+
   const mailOptions = {
     from: `${emailConfig.fromName} <${emailConfig.user}>`,
     to: email,

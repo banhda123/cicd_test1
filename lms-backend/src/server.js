@@ -54,15 +54,8 @@ const validateEnv = () => {
       }
     }
 
-    // Kiểm tra kết nối email
-    try {
-      const emailConnected = await emailService.verifyEmailConnection();
-      if (!emailConnected) {
-        console.warn('⚠️  Email service not properly configured. Some features may not work.');
-      }
-    } catch (error) {
-      console.warn('⚠️ Email verification failed:', error.message);
-    }
+    // ❌ Bỏ qua kiểm tra email để tránh timeout
+    console.log('⚠️ Email verification skipped - will check when sending emails');
 
     const server = http.createServer(app);
     initSocket(server);
