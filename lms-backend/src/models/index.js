@@ -67,10 +67,13 @@ const modelNames = [
 ];
 
 modelNames.forEach((name) => {
-  // ✅ Đã truyền cả sequelize và DataTypes vào các model con
+  // Đã truyền cả sequelize và DataTypes vào các model con
   const model = require(`./${name}.model`)(sequelize, DataTypes);
   models[name.charAt(0).toUpperCase() + name.slice(1)] = model;
 });
+
+// Export DataTypes để các model có thể import
+module.exports.DataTypes = DataTypes;
 
 // Giải nén models để thiết lập association
 const {
