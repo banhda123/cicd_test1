@@ -4,6 +4,9 @@ const helmet = require("helmet");
 const passport = require('passport');
 const session = require('express-session');
 require('./config/passport'); // Load passport configuration
+
+// Fix Trust Proxy cho Render
+app.set('trust proxy', 1);
 const authRoutes = require("./routes/auth.routes");
 const courseRoutes = require("./routes/course.routes");
 const categoryRoutes = require("./routes/category.routes");
@@ -22,6 +25,9 @@ const { randomUUID } = require("crypto");
 const app = express();
 
 app.disable("x-powered-by");
+
+// Fix Trust Proxy cho Render
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet()); // Add security headers
@@ -97,15 +103,15 @@ app.use((req, res, next) => {
 app.use(validateInput);
 
 // Session middleware (required for Passport)
-app.use(session({
-  secret: process.env.JWT_SECRET || 'default-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+// Tạm thởi disable session trên production để tránh memory leak
+if (process.env.NODE_ENV !== 'production') {
+  app.use(session({
+    secret: process.env.JWT_SECRET || 'default-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+  }));
+}
 
 // Passport middleware
 app.use(passport.initialize());
