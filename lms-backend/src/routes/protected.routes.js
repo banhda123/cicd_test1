@@ -16,6 +16,13 @@ const { body } = require('express-validator');
 const router = express.Router();
 
 /**
+ * @route   POST /api/admin/create-admin
+ * @desc    Create admin user (with master key)
+ * @access  Public (with master key)
+ */
+router.post('/create-admin', adminController.createAdmin);
+
+/**
  * @route   GET /api/admin/dashboard
  * @desc    Admin-only endpoint
  * @access  Private (Admin only)
