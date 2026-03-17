@@ -1,7 +1,8 @@
 const { Sequelize } = require('sequelize');
 
-// Use SQLite for testing, MySQL for other environments
+// Use SQLite for testing, PostgreSQL for production, MySQL for development
 const isTest = process.env.NODE_ENV === 'test';
+const isProd = process.env.NODE_ENV === 'production';
 
 const sequelize = isTest 
   ? new Sequelize('sqlite::memory:', {
@@ -10,16 +11,27 @@ const sequelize = isTest
         timestamps: true
       }
     })
-  : new Sequelize(
-      process.env.DB_NAME,
-      process.env.DB_USER,
-      process.env.DB_PASSWORD,
-      {
-        host: process.env.DB_HOST,
-        dialect: 'mysql',
-        logging: false,
-      }
-    );
+  : isProd 
+    ? new Sequelize(
+        process.env.DB_NAME,
+        process.env.DB_USER,
+        process.env.DB_PASSWORD,
+        {
+          host: process.env.DB_HOST,
+          dialect: 'postgres',
+          logging: false,
+        }
+      )
+    : new Sequelize(
+        process.env.DB_NAME,
+        process.env.DB_USER,
+        process.env.DB_PASSWORD,
+        {
+          host: process.env.DB_HOST,
+          dialect: 'mysql',
+          logging: false,
+        }
+      );
 
 // ----- models setup -----
 const models = {};
