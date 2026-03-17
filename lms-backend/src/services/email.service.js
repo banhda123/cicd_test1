@@ -4,8 +4,8 @@ const emailConfig = require('../config/email');
 // Tạo transporter với cấu hình production-ready
 const transporter = nodemailer.createTransport({
   host: emailConfig.host,
-  port: parseInt(emailConfig.port) || 465, // Ưu tiên 465 cho Render
-  secure: emailConfig.port == 465, // true cho 465, false cho 587
+  port: 465, // ✅ Force port 465 cho production
+  secure: true, // ✅ Force true cho port 465
   auth: {
     user: emailConfig.user,
     pass: emailConfig.password,
