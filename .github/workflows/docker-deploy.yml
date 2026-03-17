@@ -50,7 +50,7 @@ jobs:
         
     - name: Run simple health test
       working-directory: ./lms-backend
-      run: npm test -- --testPathPattern=health.test.js --verbose
+      run: npm test -- --testPathPatterns=health.test.js --verbose
 
   build-and-push:
     needs: test
