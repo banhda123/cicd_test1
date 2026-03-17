@@ -87,6 +87,38 @@ jobs:
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         );"
         
+        # Create categories table
+        docker exec test-db mysql -uroot -ptest test -e "
+        CREATE TABLE IF NOT EXISTS categories (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(255) NOT NULL,
+            menuSection VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );"
+        
+        # Create courses table
+        docker exec test-db mysql -uroot -ptest test -e "
+        CREATE TABLE IF NOT EXISTS courses (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            title VARCHAR(255) NOT NULL,
+            slug VARCHAR(255) UNIQUE NOT NULL,
+            description TEXT,
+            imageUrl VARCHAR(500),
+            level VARCHAR(100),
+            price DECIMAL(10,2) DEFAULT 0,
+            published BOOLEAN DEFAULT FALSE,
+            rating DECIMAL(3,2) DEFAULT 0,
+            reviewCount INT DEFAULT 0,
+            students INT DEFAULT 0,
+            totalLessons INT DEFAULT 0,
+            duration VARCHAR(255),
+            categoryId INT,
+            createdBy INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );"
+        
         # Insert admin user
         docker exec test-db mysql -uroot -ptest test -e "
         INSERT IGNORE INTO users (email, password, name, role, isEmailVerified, isActive) 
