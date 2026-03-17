@@ -4,9 +4,6 @@ const helmet = require("helmet");
 const passport = require('passport');
 const session = require('express-session');
 require('./config/passport'); // Load passport configuration
-
-// Fix Trust Proxy cho Render
-app.set('trust proxy', 1);
 const authRoutes = require("./routes/auth.routes");
 const courseRoutes = require("./routes/course.routes");
 const categoryRoutes = require("./routes/category.routes");
