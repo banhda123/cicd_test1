@@ -61,6 +61,8 @@ jobs:
           echo 'Waiting for database...'
           sleep 2
         done
+        # Create database first
+        docker exec test-db mysql -uroot -ptest -e "CREATE DATABASE IF NOT EXISTS test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
         # Initialize database schema
         docker exec test-db mysql -uroot -ptest test < database/init.sql
         # Verify tables exist
