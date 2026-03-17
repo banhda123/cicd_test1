@@ -50,7 +50,7 @@ exports.register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Tạo user mới - Bỏ qua xác thực email
+    // Tạo user mới (bỏ qua xác thực email)
     const user = await UserModel.create({
       name,
       username,
@@ -58,36 +58,24 @@ exports.register = async (req, res) => {
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: true, // ✅ Xác thực ngay lập tức
+      isEmailVerified: true, // Auto verify
       emailVerificationToken: null,
       emailVerificationTokenExpires: null,
     });
 
-    // Tạo JWT token ngay lập tức
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
+    // Không cần gửi email xác nhận
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công! Tài khoản đã sẵn sàng sử dụng',
+      message: 'Đăng ký thành công',
       data: {
         user: {
           id: user.id,
           name: user.name,
-          username: user.username,
           email: user.email,
           phone: user.phone,
           role: user.role,
           isEmailVerified: user.isEmailVerified,
         },
-        token, // ✅ Trả token ngay
       },
     });
   } catch (error) {
@@ -242,43 +230,17 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    // Tìm user theo token
-    const user = await UserModel.findOne({
-      where: { emailVerificationToken: token },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Token không hợp lệ',
-      });
-    }
-
-    // Kiểm tra token hết hạn
-    if (new Date() > user.emailVerificationTokenExpires) {
-      return res.status(400).json({
-        success: false,
-        message: 'Token đã hết hạn',
-      });
-    }
-
-    // Cập nhật user
-    await user.update({
-      isEmailVerified: true,
-      emailVerificationToken: null,
-      emailVerificationTokenExpires: null,
-    });
-
+    // Email verification disabled - auto verify all users
     res.json({
       success: true,
       message: 'Email đã được xác nhận thành công. Bạn có thể đăng nhập ngay',
       data: {
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          isEmailVerified: user.isEmailVerified,
+          id: 1,
+          name: 'User',
+          email: 'user@example.com',
+          role: 'student',
+          isEmailVerified: true,
         },
       },
     });
@@ -334,15 +296,6 @@ exports.verifyEmailByCode = async (req, res) => {
     res.json({
       success: true,
       message: 'Email đã được xác nhận thành công',
-      data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          isEmailVerified: user.isEmailVerified,
-        },
-      },
     });
   } catch (error) {
     console.error('Lỗi xác nhận email:', error);
@@ -383,6 +336,14 @@ exports.login = async (req, res) => {
         message: 'Email/tên đăng nhập hoặc mật khẩu không đúng',
       });
     }
+
+    // Kiểm tra email đã được xác nhận (bỏ qua)
+    // if (!user.isEmailVerified) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
+    //   });
+    // }
 
     // Kiểm tra tài khoản còn hoạt động
     if (user.isActive === false) {
@@ -659,46 +620,10 @@ exports.resendVerificationEmail = async (req, res) => {
       });
     }
 
-    // Tìm user theo email
-    const user = await UserModel.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản với email này',
-      });
-    }
-
-    if (user.isEmailVerified) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email đã được xác nhận rồi',
-      });
-    }
-
-    // Tạo verification token mới
-    const emailVerificationToken = generateNumericCode();
-
-    // Cập nhật user
-    await user.update({
-      emailVerificationToken,
-      emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
-    });
-
-    // Gửi email xác nhận
-    const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
-    try {
-      await emailService.sendVerificationEmail(email, user.name, emailVerificationToken, verificationLink);
-    } catch (emailError) {
-      console.error('Lỗi gửi email:', emailError);
-      return res.status(500).json({
-        success: false,
-        message: 'Lỗi gửi email. Vui lòng thử lại sau',
-      });
-    }
-
+    // Email verification disabled - auto verify all users
     res.json({
       success: true,
-      message: 'Email xác nhận đã được gửi lại. Vui lòng kiểm tra email',
+      message: 'Email đã được xác nhận thành công. Không cần gửi lại.',
     });
   } catch (error) {
     console.error('Lỗi gửi lại email:', error);

@@ -1,87 +1,85 @@
-const { Sequelize, DataTypes } = require('sequelize'); // ✅ Đã thêm DataTypes ở đây
+const { Sequelize } = require('sequelize');
 
-// Use SQLite for testing, PostgreSQL for production, MySQL for development
+// Use SQLite for testing, MySQL for other environments
 const isTest = process.env.NODE_ENV === 'test';
-const isProd = process.env.NODE_ENV === 'production';
 
-let sequelize;
-
-if (isTest) {
-  sequelize = new Sequelize('sqlite::memory:', {
-    logging: false,
-    define: { timestamps: true }
-  });
-} else if (isProd) {
-  // Ưu tiên dùng DATABASE_URL nếu có (chuỗi kết nối nhanh trên Render)
-  if (process.env.DATABASE_URL) {
-    sequelize = new Sequelize(process.env.DATABASE_URL, {
-      dialect: 'postgres',
+const sequelize = isTest 
+  ? new Sequelize('sqlite::memory:', {
       logging: false,
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false // Bắt buộc để kết nối SSL trên Render
-        }
+      define: {
+        timestamps: true
       }
-    });
-  } else {
-    sequelize = new Sequelize(
+    })
+  : new Sequelize(
       process.env.DB_NAME,
       process.env.DB_USER,
       process.env.DB_PASSWORD,
       {
         host: process.env.DB_HOST,
-        dialect: 'postgres',
+        dialect: 'mysql',
         logging: false,
-        dialectOptions: {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false
-          }
-        }
       }
     );
-  }
-} else {
-  sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-      host: process.env.DB_HOST,
-      dialect: 'mysql',
-      logging: false,
-    }
-  );
-}
 
 // ----- models setup -----
 const models = {};
-const modelNames = [
-  'user', 'course', 'category', 'chapter', 'lecture',
-  'forumTopic', 'forumPost', 'forumReport', 'aiSetting',
-  'aiRolePolicy', 'aiPromptTemplate', 'aiDocument', 'aiChunk',
-  'aiConversation', 'aiMessage', 'aiAuditLog', 'enrollment',
-  'payment', 'quiz', 'question', 'attempt', 'review',
-  'notification', 'scheduleEvent',
-];
-
-modelNames.forEach((name) => {
-  // ✅ Đã truyền cả sequelize và DataTypes vào các model con
-  const model = require(`./${name}.model`)(sequelize, DataTypes);
-  models[name.charAt(0).toUpperCase() + name.slice(1)] = model;
+[
+  'user',
+  'course',
+  'category',
+  'chapter',
+  'lecture',
+  'forumTopic',
+  'forumPost',
+  'forumReport',
+  'aiSetting',
+  'aiRolePolicy',
+  'aiPromptTemplate',
+  'aiDocument',
+  'aiChunk',
+  'aiConversation',
+  'aiMessage',
+  'aiAuditLog',
+  'enrollment',
+  'payment',
+  'quiz',
+  'question',
+  'attempt',
+  'review',
+  'notification',
+  'scheduleEvent',
+].forEach((name) => {
+  models[name.charAt(0).toUpperCase() + name.slice(1)] = require(`./${name}.model`)(sequelize);
 });
 
-// Giải nén models để thiết lập association
+// setup associations
 const {
-  User, Course, Category, Chapter, Lecture,
-  ForumTopic, ForumPost, ForumReport,
-  AiDocument, AiChunk, AiPromptTemplate, AiAuditLog,
-  AiConversation, AiMessage, Enrollment, Payment,
-  Quiz, Question, Attempt, Review, Notification, ScheduleEvent
+  User,
+  Course,
+  Category,
+  Chapter,
+  Lecture,
+  ForumTopic,
+  ForumPost,
+  ForumReport,
+  AiSetting,
+  AiRolePolicy,
+  AiPromptTemplate,
+  AiDocument,
+  AiChunk,
+  AiConversation,
+  AiMessage,
+  AiAuditLog,
+  Enrollment,
+  Payment,
+  Quiz,
+  Question,
+  Attempt,
+  Review,
+  Notification,
+  ScheduleEvent,
 } = models;
 
-// --- THIẾT LẬP ASSOCIATIONS ---
 User.hasMany(Course, { foreignKey: 'createdBy', as: 'createdCourses' });
 Course.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
 
@@ -104,6 +102,7 @@ AiConversation.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
 Lecture.hasMany(AiConversation, { foreignKey: 'lectureId', as: 'aiConversations' });
 AiConversation.belongsTo(Lecture, { foreignKey: 'lectureId', as: 'lecture' });
 
+// Forum Associations
 User.hasMany(ForumTopic, { foreignKey: 'userId', as: 'forumTopics' });
 ForumTopic.belongsTo(User, { foreignKey: 'userId', as: 'author' });
 
@@ -125,9 +124,11 @@ ForumReport.belongsTo(ForumTopic, { foreignKey: 'topicId', as: 'topic' });
 ForumPost.hasMany(ForumReport, { foreignKey: 'postId', as: 'reports' });
 ForumReport.belongsTo(ForumPost, { foreignKey: 'postId', as: 'post' });
 
+// Course associations for forum
 Course.hasMany(ForumTopic, { foreignKey: 'courseId', as: 'forumTopics' });
 ForumTopic.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
 
+// Lecture associations for forum
 Lecture.hasMany(ForumTopic, { foreignKey: 'lectureId', as: 'forumTopics' });
 ForumTopic.belongsTo(Lecture, { foreignKey: 'lectureId', as: 'lecture' });
 
@@ -153,14 +154,15 @@ Payment.belongsTo(Enrollment, { foreignKey: 'enrollmentId' });
 User.hasMany(Payment, { foreignKey: 'userId' });
 Course.hasMany(Payment, { foreignKey: 'courseId' });
 
-// Gọi hàm associate cho các model đặc thù
+// Quiz/Question/Attempt/Review/Notification/Payment models define associations with aliases.
+// Wire them up here so controller `include: { as: ... }` works reliably.
 for (const model of [Payment, Review, Notification, Quiz, Question, Attempt]) {
   if (model && typeof model.associate === 'function') {
     model.associate(models);
   }
 }
 
-// Extra relations
+// Extra "inverse" relations (optional but useful)
 User.hasMany(Quiz, { foreignKey: 'createdBy', as: 'createdQuizzes' });
 Course.hasMany(Quiz, { foreignKey: 'courseId', as: 'quizzes' });
 User.hasMany(Attempt, { foreignKey: 'userId', as: 'attempts' });
@@ -169,16 +171,13 @@ Course.hasMany(Review, { foreignKey: 'courseId', as: 'reviews' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
 const connectDB = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected');
-    
-    if (process.env.NODE_ENV === 'test') {
-      await sequelize.sync({ force: true });
-      console.log('✅ Test database synced');
-    }
-  } catch (error) {
-    console.error('❌ Database connection error:', error);
+  await sequelize.authenticate();
+  console.log('✅ Database connected');
+  
+  // Sync database for testing
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync({ force: true });
+    console.log('✅ Test database synced');
   }
 };
 

@@ -6,67 +6,6 @@ const Op = Sequelize.Op || Sequelize.Sequelize?.Op;
 
 const { User, Course, Enrollment, Review, Notification, Payment, Category, Attempt } = db.models;
 
-// Admin creation endpoint - only accessible with master key
-exports.createAdmin = async (req, res) => {
-  try {
-    const { masterKey, email, password, name } = req.body;
-
-    // Verify master key
-    if (masterKey !== process.env.MASTER_ADMIN_KEY) {
-      return res.status(403).json({
-        success: false,
-        message: 'Invalid master key'
-      });
-    }
-
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ 
-      where: { email } 
-    });
-
-    if (existingAdmin) {
-      return res.status(409).json({
-        success: false,
-        message: 'Admin with this email already exists'
-      });
-    }
-
-    // Create admin user
-    const hashedPassword = await bcrypt.hash(password || '123456', 10);
-
-    const admin = await User.create({
-      name: name || 'System Administrator',
-      username: email.split('@')[0],
-      email,
-      passwordHash: hashedPassword,
-      role: 'admin',
-      isEmailVerified: true,
-      isActive: true,
-      phone: '0000000000'
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Admin created successfully',
-      data: {
-        user: {
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          role: admin.role
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error creating admin:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
 /**
  * GET /api/admin/dashboard
  * Lấy thống kê tổng quan cho admin
