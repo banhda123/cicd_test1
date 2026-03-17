@@ -44,18 +44,11 @@ const validateEnv = () => {
     // Kết nối database
     await connectDB();
 
-    // Auto sync database cho production (chạy 1 lần khi start)
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        await require('./models').sequelize.sync({ alter: true });
-        console.log('✅ Database synced for production');
-      } catch (error) {
-        console.error('⚠️ Database sync error:', error.message);
-      }
+    // Kiểm tra kết nối email
+    const emailConnected = await emailService.verifyEmailConnection();
+    if (!emailConnected) {
+      console.warn('⚠️  Email service not properly configured. Some features may not work.');
     }
-
-    // ❌ Bỏ qua kiểm tra email để tránh timeout
-    console.log('⚠️ Email verification skipped - will check when sending emails');
 
     const server = http.createServer(app);
     initSocket(server);

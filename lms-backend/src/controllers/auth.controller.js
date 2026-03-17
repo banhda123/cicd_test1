@@ -54,14 +54,14 @@ exports.register = async (req, res) => {
     const emailVerificationToken = generateNumericCode();
 
     // Tạo user mới
-    const newUser = await UserModel.create({
+    const user = await UserModel.create({
       name,
       username,
       email,
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: process.env.NODE_ENV === 'production', // ✅ Auto verify ở production
+      isEmailVerified: false,
       emailVerificationToken,
       emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
     });
@@ -73,7 +73,7 @@ exports.register = async (req, res) => {
     } catch (emailError) {
       console.error('Lỗi gửi email:', emailError);
       // Xóa user nếu không gửi được email
-      await newUser.destroy();
+      await user.destroy();
       return res.status(500).json({
         success: false,
         message: 'Lỗi gửi email xác nhận. Vui lòng thử lại sau',
@@ -85,13 +85,13 @@ exports.register = async (req, res) => {
       message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản',
       data: {
         user: {
-          id: newUser.id,
-          name: newUser.name,
-          username: newUser.username,
-          email: newUser.email,
-          phone: newUser.phone,
-          role: newUser.role,
-          isEmailVerified: newUser.isEmailVerified,
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          isEmailVerified: user.isEmailVerified,
         },
         verificationCode: emailVerificationToken,
       },
@@ -390,17 +390,12 @@ exports.login = async (req, res) => {
       });
     }
 
-    // ✅ Bỏ qua kiểm tra email verification cho production
-    if (process.env.NODE_ENV === 'production') {
-      console.log('🔓 Production mode - skipping email verification check');
-    } else {
-      // Kiểm tra email đã được xác nhận (chỉ ở development)
-      if (!user.isEmailVerified) {
-        return res.status(403).json({
-          success: false,
-          message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
-        });
-      }
+    // Kiểm tra email đã được xác nhận
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
+      });
     }
 
     // Kiểm tra tài khoản còn hoạt động

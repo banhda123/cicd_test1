@@ -1,32 +1,19 @@
 const nodemailer = require('nodemailer');
 const emailConfig = require('../config/email');
 
-// Tạo transporter với cấu hình production-ready
+// Tạo transporter
 const transporter = nodemailer.createTransport({
   host: emailConfig.host,
-  port: 465, // ✅ Force port 465 cho production
-  secure: true, // ✅ Force true cho port 465
+  port: emailConfig.port,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: emailConfig.user,
     pass: emailConfig.password,
   },
-  // Thêm TLS để tránh lỗi chứng chỉ trên server
-  tls: {
-    rejectUnauthorized: false
-  }
 });
 
 // Gửi email xác nhận đăng ký (mã 6 chữ số)
 exports.sendVerificationEmail = async (email, name, verificationToken, verificationLink) => {
-  // ✅ Lazy verification - chỉ check khi thực sự gửi
-  try {
-    await transporter.verify();
-    console.log('✓ Email connection verified on send');
-  } catch (error) {
-    console.warn('⚠️ Email connection failed, but continuing:', error.message);
-    // Không throw error - để server tiếp tục chạy
-  }
-
   const mailOptions = {
     from: `${emailConfig.fromName} <${emailConfig.user}>`,
     to: email,

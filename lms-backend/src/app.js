@@ -23,9 +23,6 @@ const app = express();
 
 app.disable("x-powered-by");
 
-// Fix Trust Proxy cho Render
-app.set('trust proxy', 1);
-
 // Security middleware
 app.use(helmet()); // Add security headers
 const allowedOrigins = (
@@ -99,14 +96,13 @@ app.use((req, res, next) => {
 // Input validation and sanitization
 app.use(validateInput);
 
-// Session middleware (required for Passport) - Enable for production with proper config
+// Session middleware (required for Passport)
 app.use(session({
-  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || 'default-secret',
-  resave: true,
-  saveUninitialized: true,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    sameSite: 'none',
+  secret: process.env.JWT_SECRET || 'default-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -124,11 +120,6 @@ app.get("/api/health", (req, res) => {
     status: "OK",
     message: "LMS Backend running",
   });
-});
-
-// Root route cho Render health check
-app.get("/", (req, res) => {
-  res.status(200).send('Server is running');
 });
 
 // Auth routes
