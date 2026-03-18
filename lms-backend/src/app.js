@@ -27,7 +27,7 @@ app.disable("x-powered-by");
 app.use(helmet()); // Add security headers
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
-  "http://localhost:3000,http://localhost:5173,https://elearning-eduvn.vercel.app"
+  "http://localhost:3000,http://localhost:5173,https://elearning-eduvn.vercel.app/"
 )
   .split(",")
   .map((o) => o.trim());

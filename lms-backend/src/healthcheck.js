@@ -1,7 +1,7 @@
 const http = require('http');
 
 const options = {
-  host: process.env.HOST || 'localhost',
+  host: 'localhost',
   port: process.env.PORT || 3000,
   path: '/api/health',
   timeout: 2000,

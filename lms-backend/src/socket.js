@@ -7,11 +7,14 @@ let io;
 function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173,https://elearning-eduvn.vercel.app')
+      origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173')
         .split(',')
         .map((o) => o.trim()),
       credentials: true,
     },
+    transports: ['websocket', 'polling'],
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   io.use((socket, next) => {

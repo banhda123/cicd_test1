@@ -67,8 +67,7 @@ exports.register = async (req, res) => {
     });
 
     // Gửi email xác nhận
-    const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-    const verificationLink = `${baseUrl}/api/auth/verify-email/${emailVerificationToken}`;
+    const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
     try {
       await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
     } catch (emailError) {
@@ -483,7 +482,7 @@ exports.forgotPassword = async (req, res) => {
     });
 
     // Gửi email reset password
-    const feBaseUrl = process.env.FRONTEND_URL || process.env.FRONTEND_BASE_URL;
+    const feBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${String(feBaseUrl).replace(/\/+$/, '')}/reset-password?token=${encodeURIComponent(resetPasswordToken)}`;
     try {
       await emailService.sendResetPasswordEmail(email, user.name, resetPasswordToken, resetLink);
@@ -700,8 +699,7 @@ exports.resendVerificationEmail = async (req, res) => {
     });
 
     // Gửi email xác nhận
-    const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-    const verificationLink = `${baseUrl}/api/auth/verify-email/${emailVerificationToken}`;
+    const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
     try {
       await emailService.sendVerificationEmail(email, user.name, emailVerificationToken, verificationLink);
     } catch (emailError) {
