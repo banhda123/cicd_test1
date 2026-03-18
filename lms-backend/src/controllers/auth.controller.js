@@ -49,6 +49,13 @@ exports.register = async (req, res) => {
 
     const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
     
+    console.log('🔍 DEBUG REGISTER:', {
+      NODE_ENV: process.env.NODE_ENV,
+      isProd,
+      email,
+      username
+    });
+    
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -66,6 +73,12 @@ exports.register = async (req, res) => {
       isEmailVerified: isProd, // Production: verified ngay, Dev: chờ xác nhận
       emailVerificationToken: isProd ? null : emailVerificationToken,
       emailVerificationTokenExpires: isProd ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+
+    console.log('✅ DEBUG USER CREATED:', {
+      id: user.id,
+      isEmailVerified: user.isEmailVerified,
+      emailVerificationToken: user.emailVerificationToken,
     });
 
     // Gửi email xác nhận - fire and forget, không block
@@ -395,6 +408,11 @@ exports.login = async (req, res) => {
 
     // Kiểm tra email đã được xác nhận
     if (!user.isEmailVerified) {
+      console.log('🔍 DEBUG LOGIN 403:', {
+        email: user.email,
+        isEmailVerified: user.isEmailVerified,
+        emailVerificationToken: user.emailVerificationToken,
+      });
       return res.status(403).json({
         success: false,
         message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
