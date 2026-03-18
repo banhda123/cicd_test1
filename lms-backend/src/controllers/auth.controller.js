@@ -47,13 +47,15 @@ exports.register = async (req, res) => {
       });
     }
 
+    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Tạo mã xác nhận 6 chữ số
     const emailVerificationToken = generateNumericCode();
 
-    // Tạo user mới
+    // Tạo user mới - trong production tạo verified ngay để không delay
     const user = await UserModel.create({
       name,
       username,
@@ -61,37 +63,29 @@ exports.register = async (req, res) => {
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: false,
-      emailVerificationToken,
-      emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
+      isEmailVerified: isProd, // Production: verified ngay, Dev: chờ xác nhận
+      emailVerificationToken: isProd ? null : emailVerificationToken,
+      emailVerificationTokenExpires: isProd ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    // Gửi email xác nhận
-    const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
-    let emailSent = false;
-    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-    
-    try {
-      await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
-      emailSent = true;
-    } catch (emailError) {
-      console.error('⚠️  Lỗi gửi email:', emailError.message);
-      // Không xóa user, chỉ log lỗi
-    }
-
-    // Auto verify email nếu:
-    // 1. Không gửi được email, HOẶC
-    // 2. Đang ở production (do SMTP thường lỗi trên Render free tier)
-    if (!emailSent || isProd) {
-      await user.update({ isEmailVerified: true });
-      console.log('✅ Tự động xác nhận email cho user');
+    // Gửi email xác nhận - fire and forget, không block
+    if (!isProd) {
+      const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
+      // Không await để không delay response
+      emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink)
+        .then(result => {
+          if (result.success) {
+            console.log('✅ Đã gửi email xác nhận:', email);
+          }
+        })
+        .catch(err => console.error('⚠️  Lỗi gửi email:', err.message));
     }
 
     res.status(201).json({
       success: true,
-      message: emailSent 
-        ? 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản'
-        : 'Đăng ký thành công. Email đã được tự động xác nhận (SMTP tạm thời không khả dụng)',
+      message: isProd 
+        ? 'Đăng ký thành công'
+        : 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận',
       data: {
         user: {
           id: user.id,
@@ -102,7 +96,7 @@ exports.register = async (req, res) => {
           role: user.role,
           isEmailVerified: user.isEmailVerified,
         },
-        verificationCode: emailSent ? emailVerificationToken : undefined,
+        verificationCode: isProd ? undefined : emailVerificationToken,
       },
     });
   } catch (error) {

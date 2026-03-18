@@ -5,7 +5,7 @@ const emailConfig = require('../config/email');
 const transporter = nodemailer.createTransport({
   host: emailConfig.host,
   port: emailConfig.port,
-  secure: false, // true for 465, false for other ports
+  secure: false,
   auth: {
     user: emailConfig.user,
     pass: emailConfig.password,
@@ -13,12 +13,21 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
-  // Force IPv4 on Render (IPv6 not supported for SMTP)
   family: 4,
+  // Giới hạn timeout để không delay đăng ký
+  connectionTimeout: 5000, // 5 giây
+  greetingTimeout: 5000,
+  socketTimeout: 10000,
 });
 
-// Gửi email xác nhận đăng ký (mã 6 chữ số)
+// Gửi email xác nhận đăng ký (không block - fire and forget)
 exports.sendVerificationEmail = async (email, name, verificationToken, verificationLink) => {
+  // Không gửi email nếu không có config hợp lệ
+  if (!emailConfig.host || !emailConfig.user || !emailConfig.password) {
+    console.log('ℹ️  Bỏ qua gửi email - thiếu cấu hình SMTP');
+    return { success: false, skipped: true };
+  }
+
   const mailOptions = {
     from: `${emailConfig.fromName} <${emailConfig.user}>`,
     to: email,
@@ -48,10 +57,12 @@ exports.sendVerificationEmail = async (email, name, verificationToken, verificat
 
   try {
     await transporter.sendMail(mailOptions);
+    console.log('✅ Đã gửi email xác nhận:', email);
     return { success: true, message: 'Email xác nhận đã được gửi' };
   } catch (error) {
-    console.error('Lỗi gửi email:', error);
-    throw error;
+    console.error('⚠️  Lỗi gửi email:', error.message);
+    // Không throw error để không block đăng ký
+    return { success: false, error: error.message };
   }
 };
 
