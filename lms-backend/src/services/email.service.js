@@ -10,6 +10,11 @@ const transporter = nodemailer.createTransport({
     user: emailConfig.user,
     pass: emailConfig.password,
   },
+  tls: {
+    rejectUnauthorized: false,
+  },
+  // Force IPv4 on Render (IPv6 not supported for SMTP)
+  family: 4,
 });
 
 // Gửi email xác nhận đăng ký (mã 6 chữ số)
