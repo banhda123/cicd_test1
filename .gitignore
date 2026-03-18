@@ -1,5 +1,2 @@
 node_modules/
 .env
-.lms-backend/node_modules
-.lms-backend/.env
-.lms-backend/.env.render
