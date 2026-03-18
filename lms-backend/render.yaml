@@ -1,0 +1,47 @@
+services:
+  # Web Service
+  - type: web
+    name: lms-backend
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend-domain.com
+      # Email variables (commented out - disabled)
+      # - key: EMAIL_USER
+      #   sync: false
+      # - key: EMAIL_PASSWORD
+      #   sync: false
+
+databases:
+  # PostgreSQL Database
+  - name: lms-db
+    plan: free

@@ -50,7 +50,10 @@ exports.register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Tạo user mới (bỏ qua xác thực email)
+    // Tạo mã xác nhận 6 chữ số
+    const emailVerificationToken = generateNumericCode();
+
+    // Tạo user mới
     const user = await UserModel.create({
       name,
       username,
@@ -58,24 +61,41 @@ exports.register = async (req, res) => {
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: true, // Auto verify
-      emailVerificationToken: null,
-      emailVerificationTokenExpires: null,
+      isEmailVerified: false,
+      emailVerificationToken,
+      emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
     });
 
-    // Không cần gửi email xác nhận
+    // Gửi email xác nhận (DISABLED on Render)
+    const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
+    try {
+      // Commented out for Render deployment
+      // await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
+      console.log('Email verification disabled on Render. Verification code:', emailVerificationToken);
+    } catch (emailError) {
+      console.error('Lỗi gửi email:', emailError);
+      // Xóa user nếu không gửi được email (commented out for Render)
+      // await user.destroy();
+      // return res.status(500).json({
+      //   success: false,
+      //   message: 'Lỗi gửi email xác nhận. Vui lòng thử lại sau',
+      // });
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công',
+      message: 'Đăng ký thành công. Mã xác nhận của bạn: ' + emailVerificationToken + ' (Email disabled on Render)',
       data: {
         user: {
           id: user.id,
           name: user.name,
+          username: user.username,
           email: user.email,
           phone: user.phone,
           role: user.role,
           isEmailVerified: user.isEmailVerified,
         },
+        verificationCode: emailVerificationToken,
       },
     });
   } catch (error) {
@@ -230,17 +250,43 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    // Email verification disabled - auto verify all users
+    // Tìm user theo token
+    const user = await UserModel.findOne({
+      where: { emailVerificationToken: token },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Token không hợp lệ',
+      });
+    }
+
+    // Kiểm tra token hết hạn
+    if (new Date() > user.emailVerificationTokenExpires) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token đã hết hạn',
+      });
+    }
+
+    // Cập nhật user
+    await user.update({
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationTokenExpires: null,
+    });
+
     res.json({
       success: true,
       message: 'Email đã được xác nhận thành công. Bạn có thể đăng nhập ngay',
       data: {
         user: {
-          id: 1,
-          name: 'User',
-          email: 'user@example.com',
-          role: 'student',
-          isEmailVerified: true,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isEmailVerified: user.isEmailVerified,
         },
       },
     });
@@ -296,6 +342,15 @@ exports.verifyEmailByCode = async (req, res) => {
     res.json({
       success: true,
       message: 'Email đã được xác nhận thành công',
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isEmailVerified: user.isEmailVerified,
+        },
+      },
     });
   } catch (error) {
     console.error('Lỗi xác nhận email:', error);
@@ -337,13 +392,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Kiểm tra email đã được xác nhận (bỏ qua)
-    // if (!user.isEmailVerified) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
-    //   });
-    // }
+    // Kiểm tra email đã được xác nhận
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
+      });
+    }
 
     // Kiểm tra tài khoản còn hoạt động
     if (user.isActive === false) {
@@ -428,22 +483,25 @@ exports.forgotPassword = async (req, res) => {
       resetPasswordTokenExpires: new Date(Date.now() + 60 * 60 * 1000), // 1 giờ
     });
 
-    // Gửi email reset password
+    // Gửi email reset password (DISABLED on Render)
     const feBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${String(feBaseUrl).replace(/\/+$/, '')}/reset-password?token=${encodeURIComponent(resetPasswordToken)}`;
     try {
-      await emailService.sendResetPasswordEmail(email, user.name, resetPasswordToken, resetLink);
+      // Commented out for Render deployment
+      // await emailService.sendResetPasswordEmail(email, user.name, resetPasswordToken, resetLink);
+      console.log('Password reset disabled on Render. Reset token:', resetPasswordToken);
     } catch (emailError) {
       console.error('Lỗi gửi email reset password:', emailError);
-      return res.status(500).json({
-        success: false,
-        message: 'Lỗi gửi email. Vui lòng thử lại sau',
-      });
+      // Commented out for Render deployment
+      // return res.status(500).json({
+      //   success: false,
+      //   message: 'Lỗi gửi email. Vui lòng thử lại sau',
+      // });
     }
 
     res.json({
       success: true,
-      message: 'Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email',
+      message: 'Token đặt lại mật khẩu: ' + resetPasswordToken + ' (Email disabled on Render)',
     });
   } catch (error) {
     console.error('Lỗi quên mật khẩu:', error);
@@ -620,10 +678,49 @@ exports.resendVerificationEmail = async (req, res) => {
       });
     }
 
-    // Email verification disabled - auto verify all users
+    // Tìm user theo email
+    const user = await UserModel.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản với email này',
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email đã được xác nhận rồi',
+      });
+    }
+
+    // Tạo verification token mới
+    const emailVerificationToken = generateNumericCode();
+
+    // Cập nhật user
+    await user.update({
+      emailVerificationToken,
+      emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
+    });
+
+    // Gửi email xác nhận (DISABLED on Render)
+    const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
+    try {
+      // Commented out for Render deployment
+      // await emailService.sendVerificationEmail(email, user.name, emailVerificationToken, verificationLink);
+      console.log('Email verification disabled on Render. Verification code:', emailVerificationToken);
+    } catch (emailError) {
+      console.error('Lỗi gửi email:', emailError);
+      // Commented out for Render deployment
+      // return res.status(500).json({
+      //   success: false,
+      //   message: 'Lỗi gửi email. Vui lòng thử lại sau',
+      // });
+    }
+
     res.json({
       success: true,
-      message: 'Email đã được xác nhận thành công. Không cần gửi lại.',
+      message: 'Email xác nhận đã được gửi lại. Mã xác nhận: ' + emailVerificationToken + ' (Email disabled on Render)',
     });
   } catch (error) {
     console.error('Lỗi gửi lại email:', error);

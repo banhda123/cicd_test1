@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "build": "echo 'Build completed'",
     "db:sync": "node src/models/sync.js",
     "security-test": "bash test-security.sh",
     "test": "jest --runInBand",
@@ -32,6 +33,7 @@
     "nodemailer": "^8.0.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.11.3",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.3",
     "uuid": "^13.0.0"

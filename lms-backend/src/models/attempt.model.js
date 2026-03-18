@@ -3,17 +3,17 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const Attempt = sequelize.define('Attempt', {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
       primaryKey: true,
     },
     userId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       field: 'user_id',
     },
     quizId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       field: 'quiz_id',
     },

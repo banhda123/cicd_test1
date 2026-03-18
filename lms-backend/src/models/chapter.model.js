@@ -5,7 +5,7 @@ module.exports = (sequelize) => {
     "Chapter",
     {
       id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.INTEGER.UNSIGNED,
         autoIncrement: true,
         primaryKey: true,
       },
