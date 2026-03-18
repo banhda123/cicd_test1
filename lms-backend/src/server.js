@@ -24,15 +24,16 @@ const validateEnv = () => {
   requireEnv('DB_NAME');
   requireEnv('DB_USER');
   requireEnv('DB_HOST');
+
   if (isProd) {
     requireEnv('JWT_SECRET');
   } else if (!process.env.JWT_SECRET) {
-    console.warn('⚠️  JWT_SECRET is not set. Using default insecure secret (development only).');
+    console.warn('⚠️ JWT_SECRET is not set (dev only)');
   }
 
-  // Optional but recommended
+  // Optional
   if (!process.env.ALLOWED_ORIGINS) {
-    console.warn('⚠️  ALLOWED_ORIGINS is not set. Using default localhost origins.');
+    console.warn('⚠️ ALLOWED_ORIGINS not set');
   }
 };
 
@@ -40,24 +41,33 @@ const validateEnv = () => {
   try {
     validateEnv();
 
-    // Kết nối database
+    // ✅ Connect DB
     await connectDB();
-
-    // Kiểm tra kết nối email
-    const emailConnected = await emailService.verifyEmailConnection();
-    if (!emailConnected) {
-      console.warn('⚠️  Email service not properly configured. Some features may not work.');
-    }
+    console.log('✅ Database connected');
 
     const server = http.createServer(app);
     initSocket(server);
 
-    server.listen(PORT, () => {
-      console.log(`✓ Server chạy trên port ${PORT}`);
-      console.log(`✓ API: http://localhost:${PORT}/api`);
+    // ✅ Start server BEFORE email (tránh bị treo)
+    server.listen(PORT, '0.0.0.0', async () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌐 API: /api`);
+
+      // ✅ Email check chạy async, không block server
+      try {
+        const emailConnected = await emailService.verifyEmailConnection();
+        if (!emailConnected) {
+          console.warn('⚠️ Email service not configured');
+        } else {
+          console.log('✅ Email service ready');
+        }
+      } catch (err) {
+        console.warn('⚠️ Email error:', err.message);
+      }
     });
+
   } catch (error) {
-    console.error('✗ Lỗi khởi động server:', error.message);
+    console.error('❌ Startup error:', error.message);
     process.exit(1);
   }
 })();

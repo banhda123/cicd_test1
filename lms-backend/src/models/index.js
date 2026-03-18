@@ -16,8 +16,19 @@ const sequelize = isTest
       process.env.DB_PASSWORD,
       {
         host: process.env.DB_HOST,
+        port: process.env.DB_PORT || 3306,
         dialect: 'mysql',
         logging: false,
+        ssl: process.env.DB_SSL === 'true' ? {
+          require: true,
+          rejectUnauthorized: false
+        } : false,
+        dialectOptions: process.env.DB_SSL === 'true' ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false
+          }
+        } : {}
       }
     );
 

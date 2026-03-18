@@ -7,7 +7,7 @@ let io;
 function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173')
+      origin: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173,https://elearning-eduvn.vercel.app')
         .split(',')
         .map((o) => o.trim()),
       credentials: true,
