@@ -100,7 +100,7 @@ exports.register = async (req, res) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          isEmailVerified: emailSent ? false : true,
+          isEmailVerified: user.isEmailVerified,
         },
         verificationCode: emailSent ? emailVerificationToken : undefined,
       },
