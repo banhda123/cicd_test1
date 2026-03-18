@@ -68,21 +68,26 @@ exports.register = async (req, res) => {
 
     // Gửi email xác nhận
     const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
+    let emailSent = false;
     try {
       await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
+      emailSent = true;
     } catch (emailError) {
-      console.error('Lỗi gửi email:', emailError);
-      // Xóa user nếu không gửi được email
-      await user.destroy();
-      return res.status(500).json({
-        success: false,
-        message: 'Lỗi gửi email xác nhận. Vui lòng thử lại sau',
-      });
+      console.error('⚠️  Lỗi gửi email:', emailError.message);
+      // Không xóa user, chỉ log lỗi và tự động verify email
+    }
+
+    // Nếu không gửi được email, tự động verify email cho user
+    if (!emailSent) {
+      await user.update({ isEmailVerified: true });
+      console.log('✅ Tự động xác nhận email cho user (do SMTP lỗi)');
     }
 
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản',
+      message: emailSent 
+        ? 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản'
+        : 'Đăng ký thành công. Email đã được tự động xác nhận (SMTP tạm thời không khả dụng)',
       data: {
         user: {
           id: user.id,
@@ -91,9 +96,9 @@ exports.register = async (req, res) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          isEmailVerified: user.isEmailVerified,
+          isEmailVerified: emailSent ? false : true,
         },
-        verificationCode: emailVerificationToken,
+        verificationCode: emailSent ? emailVerificationToken : undefined,
       },
     });
   } catch (error) {
