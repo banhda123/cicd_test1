@@ -66,25 +66,23 @@ exports.register = async (req, res) => {
       emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
     });
 
-    // Gửi email xác nhận (DISABLED on Render)
+    // Gửi email xác nhận
     const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
     try {
-      // Commented out for Render deployment
-      // await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
-      console.log('Email verification disabled on Render. Verification code:', emailVerificationToken);
+      await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
     } catch (emailError) {
       console.error('Lỗi gửi email:', emailError);
-      // Xóa user nếu không gửi được email (commented out for Render)
-      // await user.destroy();
-      // return res.status(500).json({
-      //   success: false,
-      //   message: 'Lỗi gửi email xác nhận. Vui lòng thử lại sau',
-      // });
+      // Xóa user nếu không gửi được email
+      await user.destroy();
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi gửi email xác nhận. Vui lòng thử lại sau',
+      });
     }
 
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công. Mã xác nhận của bạn: ' + emailVerificationToken + ' (Email disabled on Render)',
+      message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản',
       data: {
         user: {
           id: user.id,
@@ -483,25 +481,22 @@ exports.forgotPassword = async (req, res) => {
       resetPasswordTokenExpires: new Date(Date.now() + 60 * 60 * 1000), // 1 giờ
     });
 
-    // Gửi email reset password (DISABLED on Render)
+    // Gửi email reset password
     const feBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${String(feBaseUrl).replace(/\/+$/, '')}/reset-password?token=${encodeURIComponent(resetPasswordToken)}`;
     try {
-      // Commented out for Render deployment
-      // await emailService.sendResetPasswordEmail(email, user.name, resetPasswordToken, resetLink);
-      console.log('Password reset disabled on Render. Reset token:', resetPasswordToken);
+      await emailService.sendResetPasswordEmail(email, user.name, resetPasswordToken, resetLink);
     } catch (emailError) {
       console.error('Lỗi gửi email reset password:', emailError);
-      // Commented out for Render deployment
-      // return res.status(500).json({
-      //   success: false,
-      //   message: 'Lỗi gửi email. Vui lòng thử lại sau',
-      // });
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi gửi email. Vui lòng thử lại sau',
+      });
     }
 
     res.json({
       success: true,
-      message: 'Token đặt lại mật khẩu: ' + resetPasswordToken + ' (Email disabled on Render)',
+      message: 'Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra email',
     });
   } catch (error) {
     console.error('Lỗi quên mật khẩu:', error);
@@ -703,24 +698,21 @@ exports.resendVerificationEmail = async (req, res) => {
       emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
     });
 
-    // Gửi email xác nhận (DISABLED on Render)
+    // Gửi email xác nhận
     const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
     try {
-      // Commented out for Render deployment
-      // await emailService.sendVerificationEmail(email, user.name, emailVerificationToken, verificationLink);
-      console.log('Email verification disabled on Render. Verification code:', emailVerificationToken);
+      await emailService.sendVerificationEmail(email, user.name, emailVerificationToken, verificationLink);
     } catch (emailError) {
       console.error('Lỗi gửi email:', emailError);
-      // Commented out for Render deployment
-      // return res.status(500).json({
-      //   success: false,
-      //   message: 'Lỗi gửi email. Vui lòng thử lại sau',
-      // });
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi gửi email. Vui lòng thử lại sau',
+      });
     }
 
     res.json({
       success: true,
-      message: 'Email xác nhận đã được gửi lại. Mã xác nhận: ' + emailVerificationToken + ' (Email disabled on Render)',
+      message: 'Email xác nhận đã được gửi lại. Vui lòng kiểm tra email',
     });
   } catch (error) {
     console.error('Lỗi gửi lại email:', error);
