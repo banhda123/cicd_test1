@@ -69,18 +69,22 @@ exports.register = async (req, res) => {
     // Gửi email xác nhận
     const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
     let emailSent = false;
+    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    
     try {
       await emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink);
       emailSent = true;
     } catch (emailError) {
       console.error('⚠️  Lỗi gửi email:', emailError.message);
-      // Không xóa user, chỉ log lỗi và tự động verify email
+      // Không xóa user, chỉ log lỗi
     }
 
-    // Nếu không gửi được email, tự động verify email cho user
-    if (!emailSent) {
+    // Auto verify email nếu:
+    // 1. Không gửi được email, HOẶC
+    // 2. Đang ở production (do SMTP thường lỗi trên Render free tier)
+    if (!emailSent || isProd) {
       await user.update({ isEmailVerified: true });
-      console.log('✅ Tự động xác nhận email cho user (do SMTP lỗi)');
+      console.log('✅ Tự động xác nhận email cho user');
     }
 
     res.status(201).json({
