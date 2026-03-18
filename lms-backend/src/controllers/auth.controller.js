@@ -71,8 +71,8 @@ exports.register = async (req, res) => {
       passwordHash: hashedPassword,
       role: 'student',
       isEmailVerified: isProd, // Production: verified ngay, Dev: chờ xác nhận
-      emailVerificationToken: isProd ? null : emailVerificationToken,
-      emailVerificationTokenExpires: isProd ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+      emailVerificationToken: emailVerificationToken, // Luôn tạo để frontend có mã
+      emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
     console.log('✅ DEBUG USER CREATED:', {
