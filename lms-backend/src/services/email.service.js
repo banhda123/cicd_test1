@@ -1,16 +1,7 @@
-const SibApiV3Sdk = require('@getbrevo/brevo');
 const emailConfig = require('../config/email');
 
-// Khởi tạo Brevo API client
-let apiInstance = null;
-
-function getApiInstance() {
-  if (!apiInstance && emailConfig.apiKey) {
-    apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-    apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, emailConfig.apiKey);
-  }
-  return apiInstance;
-}
+// Brevo API base URL
+const BREVO_API_URL = 'https://api.brevo.com/v3';
 
 // Kiểm tra cấu hình
 function isConfigured() {
@@ -25,6 +16,35 @@ function getSender() {
   };
 }
 
+// Gửi email qua Brevo REST API
+async function sendEmailViaBrevo(toEmail, toName, subject, htmlContent) {
+  if (!isConfigured()) {
+    throw new Error('Thiếu BREVO_API_KEY');
+  }
+
+  const response = await fetch(`${BREVO_API_URL}/smtp/email`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'api-key': emailConfig.apiKey,
+    },
+    body: JSON.stringify({
+      sender: getSender(),
+      to: [{ email: toEmail, name: toName }],
+      subject: subject,
+      htmlContent: htmlContent,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}`);
+  }
+
+  return await response.json();
+}
+
 // Gửi email xác nhận đăng ký
 exports.sendVerificationEmail = async (email, name, verificationToken, verificationLink) => {
   if (!isConfigured()) {
@@ -32,9 +52,7 @@ exports.sendVerificationEmail = async (email, name, verificationToken, verificat
     return { success: false, skipped: true };
   }
 
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.subject = 'Xác nhận email - Đăng ký tài khoản';
-  sendSmtpEmail.htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
         <h2 style="color: #333; margin-bottom: 20px;">Xin chào ${name}!</h2>
@@ -59,12 +77,9 @@ exports.sendVerificationEmail = async (email, name, verificationToken, verificat
       </div>
     </div>
   `;
-  sendSmtpEmail.sender = getSender();
-  sendSmtpEmail.to = [{ email, name }];
 
   try {
-    const api = getApiInstance();
-    const data = await api.sendTransacEmail(sendSmtpEmail);
+    const data = await sendEmailViaBrevo(email, name, 'Xác nhận email - Đăng ký tài khoản', htmlContent);
     console.log('✅ Đã gửi email xác nhận:', email, 'MessageId:', data.messageId);
     return { success: true, message: 'Email xác nhận đã được gửi', messageId: data.messageId };
   } catch (error) {
@@ -80,9 +95,7 @@ exports.sendResetPasswordEmail = async (email, name, resetToken, resetLink) => {
     throw new Error('Email service not configured');
   }
 
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.subject = 'Đặt lại mật khẩu - EnglishLearning';
-  sendSmtpEmail.htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
         <h2 style="color: #333; margin-bottom: 20px;">Xin chào ${name}!</h2>
@@ -108,12 +121,9 @@ exports.sendResetPasswordEmail = async (email, name, resetToken, resetLink) => {
       </div>
     </div>
   `;
-  sendSmtpEmail.sender = getSender();
-  sendSmtpEmail.to = [{ email, name }];
 
   try {
-    const api = getApiInstance();
-    const data = await api.sendTransacEmail(sendSmtpEmail);
+    await sendEmailViaBrevo(email, name, 'Đặt lại mật khẩu - EnglishLearning', htmlContent);
     console.log('✅ Đã gửi email reset password:', email);
     return { success: true, message: 'Email đặt lại mật khẩu đã được gửi' };
   } catch (error) {
@@ -136,10 +146,20 @@ exports.verifyEmailConnection = async () => {
   }
 
   try {
-    const api = getApiInstance();
-    const accountApi = new SibApiV3Sdk.AccountApi();
-    accountApi.setApiKey(SibApiV3Sdk.AccountApiApiKeys.apiKey, emailConfig.apiKey);
-    const account = await accountApi.getAccount();
+    // Test API connection by getting account info
+    const response = await fetch(`${BREVO_API_URL}/account`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'api-key': emailConfig.apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const account = await response.json();
     console.log('✅ Kết nối Brevo API thành công:', account.email);
     return true;
   } catch (error) {
