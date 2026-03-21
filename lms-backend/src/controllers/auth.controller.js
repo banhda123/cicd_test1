@@ -47,16 +47,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-    
-    console.log('🔍 DEBUG REGISTER:', {
-      NODE_ENV: process.env.NODE_ENV,
-      isProd,
-      email,
-      username
-    });
-    
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Tạo mã xác nhận 6 chữ số
@@ -70,15 +60,9 @@ exports.register = async (req, res) => {
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: false, // Luôn cần xác thực email
+      isEmailVerified: false,
       emailVerificationToken: emailVerificationToken,
       emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
-    console.log('✅ DEBUG USER CREATED:', {
-      id: user.id,
-      isEmailVerified: user.isEmailVerified,
-      emailVerificationToken: user.emailVerificationToken,
     });
 
     // Gửi email xác nhận qua Brevo - fire and forget, không block response
@@ -405,11 +389,6 @@ exports.login = async (req, res) => {
 
     // Kiểm tra email đã được xác nhận
     if (!user.isEmailVerified) {
-      console.log('🔍 DEBUG LOGIN 403:', {
-        email: user.email,
-        isEmailVerified: user.isEmailVerified,
-        emailVerificationToken: user.emailVerificationToken,
-      });
       return res.status(403).json({
         success: false,
         message: 'Email chưa được xác nhận. Vui lòng kiểm tra email',
