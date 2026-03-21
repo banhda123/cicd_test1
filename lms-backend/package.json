@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@getbrevo/brevo": "^5.0.1",
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
@@ -31,7 +32,6 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "mysql2": "^3.18.0",
-    "nodemailer": "^8.0.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.11.3",
