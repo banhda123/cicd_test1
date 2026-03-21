@@ -1,23 +1,25 @@
 const nodemailer = require('nodemailer');
 const emailConfig = require('../config/email');
 
-// Tạo transporter
+// Tạo transporter với config động
+const isSecure = emailConfig.port === 465;
 const transporter = nodemailer.createTransport({
   host: emailConfig.host,
   port: emailConfig.port,
-  secure: false,
+  secure: isSecure, // true cho port 465, false cho các port khác
   auth: {
     user: emailConfig.user,
     pass: emailConfig.password,
   },
   tls: {
     rejectUnauthorized: false,
+    minVersion: 'TLSv1.2',
   },
-  family: 4,
-  // Giới hạn timeout để không delay đăng ký
-  connectionTimeout: 5000, // 5 giây
-  greetingTimeout: 5000,
-  socketTimeout: 10000,
+  family: 4, // Force IPv4
+  // Timeout ngắn
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 // Gửi email xác nhận đăng ký (không block - fire and forget)
@@ -109,14 +111,22 @@ exports.sendResetPasswordEmail = async (email, name, resetToken, resetLink) => {
   }
 };
 
-// Kiểm tra kết nối email
+// Kiểm tra kết nối email với debug
 exports.verifyEmailConnection = async () => {
+  console.log('🔍 SMTP Config:', {
+    host: emailConfig.host,
+    port: emailConfig.port,
+    secure: isSecure,
+    user: emailConfig.user ? '***' : undefined,
+    pass: emailConfig.password ? '***' : undefined,
+  });
+  
   try {
     await transporter.verify();
     console.log('✓ Kết nối email thành công');
     return true;
   } catch (error) {
-    console.error('✗ Lỗi kết nối email:', error);
+    console.error('✗ Lỗi kết nối email:', error.message);
     return false;
   }
 };
