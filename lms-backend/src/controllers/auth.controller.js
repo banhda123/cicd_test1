@@ -62,7 +62,7 @@ exports.register = async (req, res) => {
     // Tạo mã xác nhận 6 chữ số
     const emailVerificationToken = generateNumericCode();
 
-    // Tạo user mới - trong production tạo verified ngay để không delay
+    // Tạo user mới - cần xác thực email (gửi qua Brevo)
     const user = await UserModel.create({
       name,
       username,
@@ -70,8 +70,8 @@ exports.register = async (req, res) => {
       phone,
       passwordHash: hashedPassword,
       role: 'student',
-      isEmailVerified: isProd, // Production: verified ngay, Dev: chờ xác nhận
-      emailVerificationToken: emailVerificationToken, // Luôn tạo để frontend có mã
+      isEmailVerified: false, // Luôn cần xác thực email
+      emailVerificationToken: emailVerificationToken,
       emailVerificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
@@ -81,24 +81,21 @@ exports.register = async (req, res) => {
       emailVerificationToken: user.emailVerificationToken,
     });
 
-    // Gửi email xác nhận - fire and forget, không block
-    if (!isProd) {
-      const verificationLink = `http://localhost:5000/api/auth/verify-email/${emailVerificationToken}`;
-      // Không await để không delay response
-      emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink)
-        .then(result => {
-          if (result.success) {
-            console.log('✅ Đã gửi email xác nhận:', email);
-          }
-        })
-        .catch(err => console.error('⚠️  Lỗi gửi email:', err.message));
-    }
+    // Gửi email xác nhận qua Brevo - fire and forget, không block response
+    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${emailVerificationToken}`;
+    emailService.sendVerificationEmail(email, name, emailVerificationToken, verificationLink)
+      .then(result => {
+        if (result.success) {
+          console.log('✅ Đã gửi email xác nhận qua Brevo:', email);
+        } else {
+          console.log('⚠️  Không gửi được email:', result.error || 'Unknown error');
+        }
+      })
+      .catch(err => console.error('⚠️  Lỗi gửi email:', err.message));
 
     res.status(201).json({
       success: true,
-      message: isProd 
-        ? 'Đăng ký thành công'
-        : 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận',
+      message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận',
       data: {
         user: {
           id: user.id,
@@ -109,7 +106,7 @@ exports.register = async (req, res) => {
           role: user.role,
           isEmailVerified: user.isEmailVerified,
         },
-        verificationCode: isProd ? undefined : emailVerificationToken,
+        verificationCode: emailVerificationToken,
       },
     });
   } catch (error) {

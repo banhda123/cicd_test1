@@ -29,7 +29,7 @@ exports.sendVerificationEmail = async (email, name, verificationToken, verificat
   }
 
   const mailOptions = {
-    from: `${emailConfig.fromName} <${emailConfig.user}>`,
+    from: `${emailConfig.fromName} <${emailConfig.fromEmail || emailConfig.user}>`,
     to: email,
     subject: 'Xác nhận email - Đăng ký tài khoản LMS',
     html: `
@@ -69,7 +69,7 @@ exports.sendVerificationEmail = async (email, name, verificationToken, verificat
 // Gửi email đặt lại mật khẩu
 exports.sendResetPasswordEmail = async (email, name, resetToken, resetLink) => {
   const mailOptions = {
-    from: `${emailConfig.fromName} <${emailConfig.user}>`,
+    from: `${emailConfig.fromName} <${emailConfig.fromEmail || emailConfig.user}>`,
     to: email,
     subject: 'Đặt lại mật khẩu - LMS',
     html: `
